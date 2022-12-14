@@ -1,4 +1,5 @@
 import sys # Need it to use command line argument or stop the program
+import os # Need it to look up at files before donwloading them twice
 import requests # Need it to make http request
 from bs4 import BeautifulSoup # Need it to work easier with html page
 from multiprocessing import cpu_count # Just the cpu_count of the machine
@@ -60,7 +61,7 @@ def find_all_download_link(list_episodes):
     # File where it writes the download link of the episodes
     dlink = open(".download_link.txt", "a")
     # For each a element in the <li> tag
-    print("\nFinding the episodes' links to download...\n")
+    print("\nCercando i link degli episodi da scaricare...\n")
     for a in list_episodes.find_all("a"):
         # Assemble the link and add "\n" to save links one under the other
         link_episode = "https://www.animeworld.tv" + a["href"] + "\n"
@@ -96,26 +97,42 @@ def download_list():
     links.pop() # Remove the last element ''
     return links
 
+def create_folder(link):
+    # Create the simpler name for saving and the folder
+    name_folder = "download/" + link[link.rfind("/")+1:link.find("_")]
+    name_file = link[link.rfind("/")+1:]
+    name = name_folder + "/" + name_file
+    # if the folder exist it won't create it again
+    if os.path.exists(name_folder):
+        return name
+    else:
+        os.mkdir(name_folder)
+        return name
+
 def download_file(link):
-    # Create the simpler name for saving
-    name = "download/" + link[link.rfind("/")+1:]
-    # Start the download
-    r = requests.get(link, stream=True)
-    if r.status_code == requests.codes.ok: # Rrequest went through without errors
-        # Find the size of the file downloading
-        total_size_in_bytes= int(r.headers.get('content-length', 0))
-        # Give the right dimension to the progress bar
-        progress_bar = tqdm(total=total_size_in_bytes, 
-                            unit='iB', 
-                            unit_scale=True,
-                            desc=link[link.rfind("/")+1:])
-        # Start the download writing the bytes on the file
-        with open(name, 'wb') as f:
-            for data in r:
-                # Update the progress bar
-                progress_bar.update(len(data))
-                f.write(data)
-        progress_bar.close() # Close the progress bar when finished
+    # name of the file
+    name = create_folder(link)
+    # Check if the file exist
+    if os.path.exists(name):
+        return
+    else: # if the files doesn't exist it will downlaod it
+        # Start the download
+        r = requests.get(link, stream=True)
+        if r.status_code == requests.codes.ok: # Rrequest went through without errors
+            # Find the size of the file downloading
+            total_size_in_bytes= int(r.headers.get('content-length', 0))
+            # Give the right dimension to the progress bar
+            progress_bar = tqdm(total=total_size_in_bytes, 
+                                unit='iB', 
+                                unit_scale=True,
+                                desc=link[link.rfind("/")+1:])
+            # Start the download writing the bytes on the file
+            with open(name, 'wb') as f:
+                for data in r:
+                    # Update the progress bar
+                    progress_bar.update(len(data))
+                    f.write(data)
+            progress_bar.close() # Close the progress bar when finished
 
 # Function that download all episodes found
 def download_episodes(thread_num):
@@ -124,9 +141,9 @@ def download_episodes(thread_num):
     #print(links_list)
     # Start the parallel download
     results = ThreadPool(int(thread_num)).imap(download_file, links_list)
-    # Print "Download" Complete after every donwload
+    # Print "Download complete" Complete after every donwload
     for x in results:
-       print ("Download complete!", end='\r')
+       print ("Download complete!\r", end='\r')
 
 # Start the all program with the main function
 if __name__ == "__main__":
