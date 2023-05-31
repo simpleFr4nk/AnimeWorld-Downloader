@@ -170,7 +170,7 @@ class AnimeWorldDownloader():
         links_list = self.download_list()
         #print(links_list)
         # Start the parallel download
-        results = ThreadPool(self.thread_num).imap(download_file, links_list)
+        results = ThreadPool(self.thread_num).imap(self.download_file, links_list)
         # Print "Download complete" Complete after every donwload
         for x in results:
             print ("Download complete!\r", end='\r')
