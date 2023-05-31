@@ -98,6 +98,10 @@ def download_list():
     return links
 
 def create_folder(link):
+    #check if folder download exists
+    if not os.path.exists("download"):
+        os.mkdir("download")
+    
     # Create the simpler name for saving and the folder
     name_folder = "download/" + link[link.rfind("/")+1:link.find("_")]
     name_file = link[link.rfind("/")+1:]
